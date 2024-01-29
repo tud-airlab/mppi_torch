@@ -1,9 +1,10 @@
 goal: [1.0, 1.0]
-device: "cuda:0"
+device: "cpu"
 dt: 0.05
 steps: 1000
 
 mppi: 
+  device: "cpu"
   mppi_mode: "halton-spline"  # halton-spline, simple
   sampling_method: "halton"   # halton, random
   num_samples: 100

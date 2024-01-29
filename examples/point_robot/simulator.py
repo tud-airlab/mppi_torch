@@ -51,6 +51,6 @@ class Simulator:
                 [*observation_dict["robot_0"]["joint_state"]["position"],
                 *observation_dict["robot_0"]["joint_state"]["velocity"]]
             ],
-            device="cuda:0",
+            device=self._device,
         )
         return observation_tensor

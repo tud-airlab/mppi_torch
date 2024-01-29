@@ -6,7 +6,7 @@ authors = ["Chadi Salmi <c.salmi@tudelft.nl>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8,<3.9"
+python = "^3.8"
 torch = "^2.1.2"
 gym = "^0.26.2"
 urdfenvs = "^0.8.19"
