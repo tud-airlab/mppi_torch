@@ -520,3 +520,10 @@ class MPPIPlanner(ABC):
         if self.u_max is not None:
             action = torch.max(torch.min(action, self.u_max), self.u_min)
         return action
+
+    def get_n_best_samples(self, n):
+        """
+            Returns the n best state sequences based on their total cost
+        """
+        top_cost, top_idx = torch.topk(-self.total_costs, n)
+        return self.states[top_idx], -top_cost
