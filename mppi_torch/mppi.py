@@ -313,10 +313,10 @@ class MPPIPlanner(ABC):
 
         # Lambda update
         if self.update_lambda and self.mppi_mode == 'simple':
-            if eta > self.eta_max*self.K:
-                self.lambda_ = (1+self.lambda_mult)*self.lambda_
-            elif eta < self.eta_min*self.K:
-                self.lambda_ = (1-self.lambda_mult)*self.lambda_
+            if eta > self.eta_u_bound:
+                self.lamdba_ = self.beta*self.beta_lm
+            elif eta < self.eta_l_bound:
+                self.lambda_ = self.beta*self.beta_um
 
         # Smoothing with Savitzky-Golay filter
         if self.filter_u:
