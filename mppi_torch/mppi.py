@@ -312,7 +312,7 @@ class MPPIPlanner(ABC):
             action = torch.clone(self.mean_action)
 
         # Lambda update
-        if self.update_lambda:
+        if self.update_lambda and self.mppi_mode == 'simple':
             if eta > self.eta_max*self.K:
                 self.lambda_ = (1+self.lambda_mult)*self.lambda_
             elif eta < self.eta_min*self.K:
@@ -459,9 +459,19 @@ class MPPIPlanner(ABC):
             Samples random noise and computes perturbed action sequence at each iteration. Returns total cost
         """
         # Resample noise each time we take an action
-        self.noise = self.noise_dist.sample((self.K, self.T))
+        # self.noise = self.noise_dist.sample((self.K, self.T))
+        if self.sample_method == 'random':
+            self.delta = self.get_samples(self.K, base_seed=0)
+        elif self.delta == None and self.sample_method == 'halton':
+            self.delta = self.get_samples(self.K, base_seed=0)
+            #add zero-noise seq so mean is always a part of samples
+
+        # # Add zero-noise seq so mean is always a part of samples
+        self.delta[-1,:,:] = self.Z_seq
+        # Keeps the size but scales values
+        scaled_delta = torch.matmul(self.delta, torch.diag(self.scale_tril)).view(self.delta.shape[0], self.T, self.nu)
         # Broadcast own control to noise over samples; now it's K x T x nu
-        self.perturbed_action = self.U + self.noise
+        self.perturbed_action = self.U + scaled_delta
         
         # Naively bound control
         self.perturbed_action = self._bound_action(self.perturbed_action)
@@ -472,11 +482,11 @@ class MPPIPlanner(ABC):
         # Bounded noise after bounding (some got cut off, so we don't penalize that in action cost)
         self.noise = self.perturbed_action - self.U
 
-        action_cost = self.get_action_cost()
+        # action_cost = self.get_action_cost()
 
-        # Action perturbation cost
-        perturbation_cost = torch.sum(self.U * action_cost, dim=(1, 2))
-        self.cost_total += perturbation_cost
+        # # Action perturbation cost
+        # perturbation_cost = torch.sum(self.U * action_cost, dim=(1, 2))
+        # self.cost_total += perturbation_cost
         return self.cost_total
 
     def _compute_total_cost_batch_halton(self):
