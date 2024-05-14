@@ -76,6 +76,7 @@ class MPPIConfig(object):
     noise_abs_cost: bool = False
     filter_u: bool = False
     use_priors: bool = False
+    seed_val: int = 0
 
 class MPPIPlanner(ABC):
     """
@@ -183,7 +184,7 @@ class MPPIPlanner(ABC):
     
         # Halton sampling 
         self.knot_scale = 2             # From mppi config storm is 4
-        self.seed_val = 0               # From mppi config storm
+        self.seed_val = cfg.seed_val               # From mppi config storm
         self.n_knots = self.T//self.knot_scale
         self.ndims = self.n_knots * self.nu
         self.degree = 1                 # From sample_lib storm is 2

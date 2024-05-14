@@ -87,11 +87,11 @@ def generate_halton_samples(num_samples, ndims, bases=None, use_ghalton=True, se
             samples[:, dim] = generate_van_der_corput_samples_batch(idx_batch, bases[dim])
     else:
         
-        if ndims <= 100:
-            perms = ghalton.EA_PERMS[:ndims]
-            sequencer = ghalton.GeneralizedHalton(perms)
-        else:
-            sequencer = ghalton.GeneralizedHalton(ndims, seed_val)
+        # if ndims <= 100:
+        #     perms = ghalton.EA_PERMS[:ndims]
+        #     sequencer = ghalton.GeneralizedHalton(perms)
+        # else:
+        sequencer = ghalton.GeneralizedHalton(ndims, seed_val)
         samples = torch.tensor(sequencer.get(num_samples), device=device, dtype=float_dtype)
     return samples
 
