@@ -27,7 +27,7 @@ class Simulator:
         robots = [
             GenericUrdfReacher(urdf=cfg["urdf"], mode=cfg["mode"]),
         ]
-        env: UrdfEnv = gym.make("urdf-env-v0", dt=self._dt, robots=robots, render=cfg['render'])
+        env: UrdfEnv = UrdfEnv(dt=self._dt, robots=robots, render=cfg['render'])
         # Set the initial position and velocity of the point mass.
         env.reset()
         goal_dict = {
