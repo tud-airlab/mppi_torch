@@ -73,10 +73,14 @@ class MPPIConfig(object):
     u_per_command: int = 1
     rollout_var_discount: float = 0.95
     sample_null_action: bool = False
+    sample_previous_plan: bool = True
+    sample_other_priors: bool = False
     noise_abs_cost: bool = False
     filter_u: bool = False
     use_priors: bool = False
     seed_val: int = 0
+    eta_u_bound: int = 10
+    eta_l_bound: int = 5
 
 class MPPIPlanner(ABC):
     """
@@ -115,6 +119,8 @@ class MPPIPlanner(ABC):
         self.tensor_args={'device':cfg.device, 'dtype':torch.float32}
         self.delta = None
         self.sample_null_action = cfg.sample_null_action
+        self.sample_previous_plan = cfg.sample_previous_plan
+        self.sample_other_priors = cfg.sample_other_priors
         self.u_per_command = cfg.u_per_command
         self.terminal_state_cost = None
         self.update_lambda = cfg.update_lambda
@@ -206,17 +212,12 @@ class MPPIPlanner(ABC):
         if (self.sgf_window % 2) == 0:
             self.sgf_window -=1       # Some versions of the sav-go filter require odd window size
 
-        # Lambda update, for now the update of lambda is not performed
-        self.eta_max = 0.1      # 10%
-        self.eta_min = 0.01     # 1%
-        self.lambda_mult = 0.1  # Update rate
-
-        # covariance update  for now the update of lambda is not performed
+        # covariance update
         self.step_size_cov = 0.7
         self.kappa = 0.005
 
-        self.eta_u_bound = 10
-        self.eta_l_bound = 5
+        self.eta_u_bound = cfg.eta_u_bound
+        self.eta_l_bound = cfg.eta_l_bound
         self.beta_lm = 0.9
         self.beta_um = 1.2
 
@@ -312,12 +313,14 @@ class MPPIPlanner(ABC):
               
             action = torch.clone(self.mean_action)
 
+
+        # print(eta, self.lambda_)
         # Lambda update
         if self.update_lambda and self.mppi_mode == 'simple':
             if eta > self.eta_u_bound:
-                self.lamdba_ = self.beta*self.beta_lm
+                self.lambda_ = self.lambda_*self.beta_lm
             elif eta < self.eta_l_bound:
-                self.lambda_ = self.beta*self.beta_um
+                self.lambda_ = self.lambda_*self.beta_um
 
         # Smoothing with Savitzky-Golay filter
         if self.filter_u:
@@ -366,14 +369,16 @@ class MPPIPlanner(ABC):
         for t in range(T):
             u = self.u_scale * perturbed_actions[:, t]
 
-            # Last rollout is a braking manover
+            # Second last rollout is a braking manover
             if self.sample_null_action:
-                u[self.K - 1, :] = torch.zeros_like(u[self.K -1, :])
-                self.perturbed_action[self.K - 1][t] = u[self.K -1, :]
+                u[self.K - 2, :] = torch.zeros_like(u[self.K -2, :])
+                self.perturbed_action[self.K - 2, t] = u[self.K -2, :]
 
-            if self.prior:
-                u[self.K - 2] = self.prior(state, t)
-                self.perturbed_action[self.K - 2][t] = u[self.K - 2]
+            if self.prior and self.sample_other_priors:
+                prior_samples = self.prior(state, t)
+                n_priors = len(prior_samples)
+                u[0:n_priors, :] = prior_samples
+                self.perturbed_action[0:n_priors, t] = u[0:n_priors, :]
                 
             state, u = self._dynamics(state, u, t)
             c = self._running_cost(state)
@@ -468,7 +473,8 @@ class MPPIPlanner(ABC):
             #add zero-noise seq so mean is always a part of samples
 
         # # Add zero-noise seq so mean is always a part of samples
-        self.delta[-1,:,:] = self.Z_seq
+        if self.sample_previous_plan:
+            self.delta[-1,:,:] = self.Z_seq
         # Keeps the size but scales values
         scaled_delta = torch.matmul(self.delta, torch.diag(self.scale_tril)).view(self.delta.shape[0], self.T, self.nu)
         # Broadcast own control to noise over samples; now it's K x T x nu
@@ -502,7 +508,8 @@ class MPPIPlanner(ABC):
             #add zero-noise seq so mean is always a part of samples
 
         # Add zero-noise seq so mean is always a part of samples
-        self.delta[-1,:,:] = self.Z_seq
+        if self.sample_previous_plan:
+            self.delta[-1,:,:] = self.Z_seq
         # Keeps the size but scales values
         scaled_delta = torch.matmul(self.delta, torch.diag(self.scale_tril)).view(self.delta.shape[0], self.T, self.nu)
         
