@@ -11,7 +11,7 @@ torch = "^2.1.2"
 gym = "^0.26.2"
 urdfenvs = "^0.9.12"
 mypy = "^1.8.0"
-ghalton = "^0.6.2"
+ghalton = "0.6.1"
 tqdm = "^4.66.1"
 
 
