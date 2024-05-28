@@ -34,6 +34,7 @@ poetry install
 To run the point robot example:
 
 ```
+poetry shell
 cd examples/point_robot
 python run.py
 ```
