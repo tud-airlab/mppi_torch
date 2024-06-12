@@ -344,7 +344,7 @@ class MPPIPlanner(ABC):
         if self.u_per_command == 1:
             action = action[0]
 
-        return action, state
+        return action
 
 
 
