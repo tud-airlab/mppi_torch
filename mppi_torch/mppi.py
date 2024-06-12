@@ -222,7 +222,7 @@ class MPPIPlanner(ABC):
         self.beta_um = 1.2
 
     def _dynamics(self, state, u, t=None):
-        return self.dynamics(state, u, t=None)
+        return self.dynamics(state, u, t=t)
 
     def _running_cost(self, state):
         return self.running_cost(state)
@@ -344,7 +344,9 @@ class MPPIPlanner(ABC):
         if self.u_per_command == 1:
             action = action[0]
 
-        return action
+        return action, state
+
+
 
     def _compute_rollout_costs(self, perturbed_actions):
         """
