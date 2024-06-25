@@ -426,9 +426,9 @@ class MPPIPlanner(ABC):
         self.best_idx = best_idx
         self.best_traj = torch.index_select(actions, 0, best_idx).squeeze(0)
        
-        weighted_seq = w * actions.T
+        weighted_seq = w * actions.permute(*torch.arange(actions.ndim - 1, -1, -1))
 
-        sum_seq = torch.sum(weighted_seq.T, dim=0)
+        sum_seq = torch.sum(weighted_seq.permute(*torch.arange(weighted_seq.ndim - 1, -1, -1)), dim=0)
         new_mean = sum_seq
 
         # Gradient update for the mean
